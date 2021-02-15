@@ -58,22 +58,23 @@ function! ARsync(direction)
         let l:user_passwd = ''
         if has_key(l:conf_dict, 'remote_user')
             let l:user_passwd = l:conf_dict['remote_user'] . '@'
-            if has_key(l:conf_dict, 'remote_passwd')
-                if !executable('sshpass')
-                    echoerr 'You need to install sshpass to use plain text password, otherwise please use ssh-key auth.'
-                    return
-                endif
-                let sshpass_passwd = l:conf_dict['remote_passwd']
-            endif
+            "if has_key(l:conf_dict, 'remote_passwd')
+              "let l:user_passwd = l:conf_dict['remote_user'] . ':' . l:conf_dict['remote_passwd'] . '@'
+            "endif
+        endif
+        let l:ssh_pass ='';
+        if has_key(l:conf_dict, 'remote_passwd')
+          let l:ssh_pass =  'shpass -p "' . l:conf_dict['remote_passwd'].'" ' 
         endif
 
         if a:direction == 'down'
-            let l:cmd = [ 'rsync', '-avzhe', 'ssh', l:user_passwd . l:conf_dict['remote_host'] . ':' . l:conf_dict['remote_path'] . '/', l:conf_dict['local_path'] . '/']
+          let l:cmd = [ l:ssh_pass.'rsync', '-avzhe', 'ssh', l:user_passwd . l:conf_dict['remote_host'] . ':' . l:conf_dict['remote_path'] . '/', l:conf_dict['local_path'] . '/']
         elseif  a:direction == 'up'
-            let l:cmd = [ 'rsync', '-avzhe', 'ssh', l:conf_dict['local_path'] . '/', l:user_passwd . l:conf_dict['remote_host'] . ':' . l:conf_dict['remote_path'] . '/']
+          let l:cmd = [ l:ssh_pass.'rsync', '-avzhe', 'ssh', l:conf_dict['local_path'] . '/', l:user_passwd . l:conf_dict['remote_host'] . ':' . l:conf_dict['remote_path'] . '/']
         else " updelete
-            let l:cmd = [ 'rsync', '-avzhe', 'ssh', l:conf_dict['local_path'] . '/', l:user_passwd . l:conf_dict['remote_host'] . ':' . l:conf_dict['remote_path'] . '/', '--delete']
+          let l:cmd = [ l:ssh_pass.'rsync', '-avzhe', 'ssh', l:conf_dict['local_path'] . '/', l:user_passwd . l:conf_dict['remote_host'] . ':' . l:conf_dict['remote_path'] . '/', '--delete']
         endif
+
         if has_key(l:conf_dict, 'ignore_path')
             for file in l:conf_dict['ignore_path']
                 let l:cmd = l:cmd + ['--exclude', file]
